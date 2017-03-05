@@ -11,6 +11,7 @@ from my_air_cargo_problems import (
     air_cargo_p1, air_cargo_p2, air_cargo_p3,
 )
 
+
 class TestAirCargoProb1(unittest.TestCase):
 
     def setUp(self):
@@ -20,7 +21,7 @@ class TestAirCargoProb1(unittest.TestCase):
         self.assertEqual(len(self.p1.initial), 12)
 
     def test_ACP1_num_requirements(self):
-        self.assertEqual(len(self.p1.goal),2)
+        self.assertEqual(len(self.p1.goal), 2)
 
 
 class TestAirCargoProb2(unittest.TestCase):
@@ -32,7 +33,7 @@ class TestAirCargoProb2(unittest.TestCase):
         self.assertEqual(len(self.p2.initial), 27)
 
     def test_ACP2_num_requirements(self):
-        self.assertEqual(len(self.p2.goal),3)
+        self.assertEqual(len(self.p2.goal), 3)
 
 
 class TestAirCargoProb3(unittest.TestCase):
@@ -44,7 +45,7 @@ class TestAirCargoProb3(unittest.TestCase):
         self.assertEqual(len(self.p3.initial), 32)
 
     def test_ACP3_num_requirements(self):
-        self.assertEqual(len(self.p3.goal),4)
+        self.assertEqual(len(self.p3.goal), 4)
 
 
 class TestAirCargoMethods(unittest.TestCase):
@@ -78,7 +79,8 @@ class TestAirCargoMethods(unittest.TestCase):
 
     def test_h_ignore_preconditions(self):
         n = Node(self.p1.initial)
-        self.assertEqual(self.p1.h_ignore_preconditions(n),2)
+        self.assertEqual(self.p1.h_ignore_preconditions(n), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

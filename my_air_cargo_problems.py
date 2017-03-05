@@ -144,10 +144,7 @@ class AirCargoProblem(Problem):
         action.act(kb, action.args)
         new_state = ""
         for state in self.state_map:
-            if kb.ask_if_true(state):
-                new_state += 'T'
-            else:
-                new_state += 'F'
+            new_state += 'T' if kb.ask_if_true(state) else 'F'
         return new_state
 
     def goal_test(self, state: str) -> bool:
@@ -189,7 +186,8 @@ class AirCargoProblem(Problem):
         '''
         # TODO implement (see Russell-Norvig Ed-3 10.2.3  or Russell-Norvig
         # Ed-2 11.2)
-        count = 0
+        count = len([s for (i, s) in enumerate(self.state_map)
+                     if s in self.goal and node.state[i] == "F"])
         return count
 
 
