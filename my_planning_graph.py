@@ -311,6 +311,7 @@ class PlanningGraph():
         for action in self.all_actions:
             node = PgNode_a(action)
             parents = set([s for s in self.s_levels[level] if s in node.prenodes])
+            # If all preconditions are satisfied for this action, we add it.
             if node.prenodes.issubset(parents):
                 for parent in parents:
                     parent.children.add(node)
@@ -335,6 +336,7 @@ class PlanningGraph():
         #   all of the new S nodes as children of all the A nodes that could produce them, and likewise add the A nodes to the
         #   parent sets of the S nodes
         self.s_levels.append(set())
+        # We add all effect nodes from the previous action level.
         for action_node in self.a_levels[level - 1]:
             for literal_node in action_node.effnodes:
                 self.s_levels[level].add(literal_node)
@@ -397,7 +399,12 @@ class PlanningGraph():
         :param node_a2: PgNode_a
         :return: bool
         '''
-        return any([effect in node_a2.action.effect_rem for effect in node_a1.action.effect_add] + [effect in node_a1.action.effect_rem for effect in node_a2.action.effect_add])
+        # The first action adds something and the second one removes it.
+        incon = [effect in node_a2.action.effect_rem for effect in node_a1.action.effect_add]
+        # The second action adds something and the first one removes it.
+        incon += [effect in node_a1.action.effect_rem for effect in node_a2.action.effect_add]
+        # If any of these are true, then the nodes are mutex.
+        return any(incon)
 
     def interference_mutex(self, node_a1: PgNode_a, node_a2: PgNode_a) -> bool:
         '''
@@ -413,7 +420,14 @@ class PlanningGraph():
         :param node_a2: PgNode_a
         :return: bool
         '''
-        return any([effect in node_a2.action.precond_neg for effect in node_a1.action.effect_add] + [effect in node_a2.action.precond_pos for effect in node_a1.action.effect_rem] + [effect in node_a1.action.precond_neg for effect in node_a2.action.effect_add] + [effect in node_a1.action.precond_pos for effect in node_a2.action.effect_rem])
+        # Effects of the first action interfere with the preconditions of the second.
+        inter = [effect in node_a2.action.precond_neg for effect in node_a1.action.effect_add]
+        inter += [effect in node_a2.action.precond_pos for effect in node_a1.action.effect_rem]
+        # Effects of the second action interfere with the preconditions of the first.
+        inter += [effect in node_a1.action.precond_neg for effect in node_a2.action.effect_add]
+        inter += [effect in node_a1.action.precond_pos for effect in node_a2.action.effect_rem]
+        # If any of these are true, then the nodes are mutex.
+        return any(inter)
 
     def competing_needs_mutex(self, node_a1: PgNode_a, node_a2: PgNode_a) -> bool:
         '''
@@ -425,11 +439,9 @@ class PlanningGraph():
         :param node_a2: PgNode_a
         :return: bool
         '''
-        for l1 in node_a1.parents:
-            for l2 in node_a2.parents:
-                if l1.is_mutex(l2):
-                    return True
-        return False
+        # If any two of the parent nodes are mutex, then these nodes are mutex.
+        compete = [l1.is_mutex(l2) for l1 in node_a1.parents for l2 in node_a2.parents]
+        return any(compete)
 
     def update_s_mutex(self, nodeset: set):
         ''' Determine and update sibling mutual exclusion for S-level nodes
@@ -463,6 +475,7 @@ class PlanningGraph():
         :param node_s2: PgNode_s
         :return: bool
         '''
+        # If they are have the same symbol, but one is positive and the other is negative.
         return node_s1.symbol == node_s2.symbol and node_s1.is_pos != node_s2.is_pos
 
     def inconsistent_support_mutex(self, node_s1: PgNode_s, node_s2: PgNode_s):
@@ -483,6 +496,8 @@ class PlanningGraph():
         '''
         for a1 in node_s1.parents:
             for a2 in node_s2.parents:
+                # If the two parents are the same node or not mutex,
+                # then these nodes should not be mutex.
                 if a1 == a2 or not a1.is_mutex(a2):
                     return False
         return True
@@ -493,10 +508,12 @@ class PlanningGraph():
         :return: int
         '''
         level_sum = 0
+        # Keep track of the goals we already found.
         goals_found = set()
         for i, literals in enumerate(self.s_levels):
             for goal in self.problem.goal:
                 goal_node = PgNode_s(goal, True)
+                # If the goal is at this level and we haven't seen it yet.
                 if goal_node in literals and goal not in goals_found:
                     level_sum += i
                     goals_found.add(goal)

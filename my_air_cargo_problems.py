@@ -62,12 +62,15 @@ class AirCargoProblem(Problem):
             for cargo in self.cargos:
                 for plane in self.planes:
                     for airport in self.airports:
+                        # In order to load the cargo, we need the cargo and the plane
+                        # to be at the the airport.
                         precond_pos = [expr("At({}, {})".format(cargo, airport)), expr(
                             "At({}, {})".format(plane, airport))]
                         precond_neg = []
+                        # After a load, the cargo is in the plane.
                         effect_add = [expr("In({}, {})".format(cargo, plane))]
-                        effect_rem = [
-                            expr("At({}, {})".format(cargo, airport))]
+                        # After a load, the cargo is no longer "at" the airport.
+                        effect_rem = [expr("At({}, {})".format(cargo, airport))]
                         loads.append(Action(expr("Load({}, {}, {})".format(cargo, plane, airport)),
                                             [precond_pos, precond_neg], [effect_add, effect_rem]))
             return loads
@@ -81,11 +84,14 @@ class AirCargoProblem(Problem):
             for cargo in self.cargos:
                 for plane in self.planes:
                     for airport in self.airports:
+                        # In order to unload the cargo, we need the cargo to be
+                        # in the plane and the plane at the airport.
                         precond_pos = [expr("In({}, {})".format(cargo, plane)), expr(
                             "At({}, {})".format(plane, airport))]
                         precond_neg = []
-                        effect_add = [
-                            expr("At({}, {})".format(cargo, airport))]
+                        # After an unload, the cargo is at the airport.
+                        effect_add = [expr("At({}, {})".format(cargo, airport))]
+                        # After an unload, the cargo is no longer in the plane.
                         effect_rem = [expr("In({}, {})".format(cargo, plane))]
                         unloads.append(Action(expr("Unload({}, {}, {})".format(cargo, plane, airport)),
                                               [precond_pos, precond_neg], [effect_add, effect_rem]))
@@ -101,9 +107,12 @@ class AirCargoProblem(Problem):
                 for to in self.airports:
                     if fr != to:
                         for p in self.planes:
+                            # In order to fly, the plane needs to be at the "from" airport.
                             precond_pos = [expr("At({}, {})".format(p, fr)), ]
                             precond_neg = []
+                            # After the fly, the plane is at the "to" airport.
                             effect_add = [expr("At({}, {})".format(p, to))]
+                            # After the fly, the plane is no longer at the "from" airport.
                             effect_rem = [expr("At({}, {})".format(p, fr))]
                             fly = Action(expr("Fly({}, {}, {})".format(p, fr, to)),
                                          [precond_pos, precond_neg],
@@ -121,10 +130,11 @@ class AirCargoProblem(Problem):
             e.g. 'FTTTFF'
         :return: list of Action objects
         """
+        # Creating the knowledge base allows us to to use Action.check_procond
         kb = PropKB()
         kb.tell(decode_state(state, self.state_map).pos_sentence())
-        possible_actions = [
-            a for a in self.actions_list if a.check_precond(kb, a.args)]
+        # All actions that have their preconditions met in the current state.
+        possible_actions = [a for a in self.actions_list if a.check_precond(kb, a.args)]
         return possible_actions
 
     def result(self, state: str, action: Action):
@@ -139,9 +149,13 @@ class AirCargoProblem(Problem):
         kb = PropKB()
         curr_state = decode_state(state, self.state_map)
         kb.tell(curr_state.pos_sentence())
+        # If the given action cannot be done in the current state,
+        # then we return the current state.
         if not action.check_precond(kb, action.args):
             return state
+        # Do the action with the current knowledge base.
         action.act(kb, action.args)
+        # Construct the new_state straight from the knowledge base.
         new_state = ""
         for state in self.state_map:
             new_state += 'T' if kb.ask_if_true(state) else 'F'
@@ -184,19 +198,25 @@ class AirCargoProblem(Problem):
         conditions by ignoring the preconditions required for an action to be
         executed.
         '''
+        # Count the goals that are not true in the current state.
         count = len([s for (i, s) in enumerate(self.state_map)
                      if s in self.goal and node.state[i] == "F"])
         return count
 
 
 def air_cargo_p1() -> AirCargoProblem:
+    # Two cargos.
     cargos = ['C1', 'C2']
+    # Two planes.
     planes = ['P1', 'P2']
+    # Two airports.
     airports = ['JFK', 'SFO']
+    # Things that are true in the initial state.
     pos = [expr('At(C1, SFO)'),
            expr('At(C2, JFK)'),
            expr('At(P1, SFO)'),
-           expr('At(P2, JFK)'), ]
+           expr('At(P2, JFK)')]
+    # Everything else is not true.
     neg = [expr('At(C2, SFO)'),
            expr('In(C2, P1)'),
            expr('In(C2, P2)'),
@@ -204,17 +224,21 @@ def air_cargo_p1() -> AirCargoProblem:
            expr('In(C1, P1)'),
            expr('In(C1, P2)'),
            expr('At(P1, JFK)'),
-           expr('At(P2, SFO)'), ]
+           expr('At(P2, SFO)')]
     init = FluentState(pos, neg)
     goal = [expr('At(C1, JFK)'),
-            expr('At(C2, SFO)'), ]
+            expr('At(C2, SFO)')]
     return AirCargoProblem(cargos, planes, airports, init, goal)
 
 
 def air_cargo_p2() -> AirCargoProblem:
+    # Three cargos.
     cargos = ['C1', 'C2', 'C3']
+    # Three planes.
     planes = ['P1', 'P2', 'P3']
+    # Three airports.
     airports = ['JFK', 'SFO', 'ATL']
+    # Things that are true in the initial state.
     pos = [expr('At(C1, SFO)'),
            expr('At(C2, JFK)'),
            expr('At(C3, ATL)'),
@@ -222,11 +246,13 @@ def air_cargo_p2() -> AirCargoProblem:
            expr('At(P2, JFK)'),
            expr('At(P3, ATL)')]
     neg = []
+    # Everything else is false in the initial state.
     for a in airports:
         for c in (cargos + planes):
             e = expr("At({}, {})".format(c, a))
             if e not in pos:
                 neg.append(e)
+    # No cargo is in any plane.
     for p in planes:
         for c in cargos:
             neg.append(expr("In({}, {})".format(c, p)))
@@ -238,9 +264,13 @@ def air_cargo_p2() -> AirCargoProblem:
 
 
 def air_cargo_p3() -> AirCargoProblem:
+    # Four cargos.
     cargos = ['C1', 'C2', 'C3', 'C4']
+    # Two planes
     planes = ['P1', 'P2']
+    # Four airports
     airports = ['JFK', 'SFO', 'ATL', 'ORD']
+    # Things that are true in the initial state.
     pos = [expr('At(C1, SFO)'),
            expr('At(C2, JFK)'),
            expr('At(C3, ATL)'),
@@ -248,11 +278,13 @@ def air_cargo_p3() -> AirCargoProblem:
            expr('At(P1, SFO)'),
            expr('At(P2, JFK)')]
     neg = []
+    # Everything else is false in the initial state.
     for a in airports:
         for c in (cargos + planes):
             e = expr("At({}, {})".format(c, a))
             if e not in pos:
                 neg.append(e)
+    # No cargo starts in any plane.
     for p in planes:
         for c in cargos:
             neg.append(expr("In({}, {})".format(c, p)))
