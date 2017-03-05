@@ -402,7 +402,7 @@ class PlanningGraph():
         # The first action adds something and the second one removes it.
         incon = [effect in node_a2.action.effect_rem for effect in node_a1.action.effect_add]
         # The second action adds something and the first one removes it.
-        incon += [effect in node_a1.action.effect_rem for effect in node_a2.action.effect_add]
+        incon.extend([effect in node_a1.action.effect_rem for effect in node_a2.action.effect_add])
         # If any of these are true, then the nodes are mutex.
         return any(incon)
 
@@ -422,10 +422,10 @@ class PlanningGraph():
         '''
         # Effects of the first action interfere with the preconditions of the second.
         inter = [effect in node_a2.action.precond_neg for effect in node_a1.action.effect_add]
-        inter += [effect in node_a2.action.precond_pos for effect in node_a1.action.effect_rem]
+        inter.extend([effect in node_a2.action.precond_pos for effect in node_a1.action.effect_rem])
         # Effects of the second action interfere with the preconditions of the first.
-        inter += [effect in node_a1.action.precond_neg for effect in node_a2.action.effect_add]
-        inter += [effect in node_a1.action.precond_pos for effect in node_a2.action.effect_rem]
+        inter.extend([effect in node_a1.action.precond_neg for effect in node_a2.action.effect_add])
+        inter.extend([effect in node_a1.action.precond_pos for effect in node_a2.action.effect_rem])
         # If any of these are true, then the nodes are mutex.
         return any(inter)
 
