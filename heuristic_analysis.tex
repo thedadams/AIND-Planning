@@ -3,6 +3,7 @@
 \usepackage{fancyhdr}
 \usepackage{titlesec}
 \usepackage{amsmath}
+\usepackage{xcolor}
 
 \linespread{1.5}
 \setlength{\parskip}{1em}
@@ -22,324 +23,130 @@
 \begin{document}
 {\Large \textbf{Introduction}}
 \vskip1pt
-This is my analysis of the heuristics I came up with for the Isolation game in Udacity's Artificial Intelligence Nanodegree. The goal of the this project was to implement minimax search with alpha-beta pruning and iterative deepening and come up with 3 different heuristics in hopes that one of them consistently outperforms the ``improved'' heuristic from lectures. The ideas I came up with fall into three categories: positional heuristics, generalized versions of ``improved,'' and combinations of the first two. Each heuristic was run using \texttt{tournament.py} with \texttt{NUM\_MATCHES} set to 25 (so 100 total matches against each test agent). Also, I abbreviated the names of the test agents (e.g. MM\_Null to MM\_N) to save space on the tables. I hope that this doesn't cause any confusion.
+This is my analysis of the planning problems listed in README.md. The goal of this project was to successfully implement parts of the classical planning problem, planning graph search, and the \texttt{GRAPHPLAN} algorithm. After passing the test cases, I ran the code to find solutions using 7 of the 10 search algorithms: breadth-first search (BFS), depth-first search (DFS), uniform cost search (UCS), greedy best-first graph search (Greedy with h\_1), and three A$^*$ searches (with h\_1, ignore preconditions (IP), and level sum (LS)).
 
-First, here at the results I got for ID\_Improved:
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
-  \hline
-  Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
-  \hline
-  79\% & 72\% & 65\% & 55\% & 74\% & 65\% & 60\% & 67.14\%\\
-  \hline
-\end{tabular}
+One note on how I ran the algorithms. I used an older computer that I could run the solutions on without worrying about how long it took. The times would be significantly improved if I used a faster computer. For example, the A$^*$ with level sum search for problem 3 took 2469.787 seconds. On my faster machine, this took roughly half the amount of time: 1223.57 seconds.
 
-{\Large \textbf{Positional Heuristics}}
+Also, in each table below, the best performance in a metric for the uninformed search algorithms is given in red and the best for the automatic heuristics is given in green. The optimal path given at the end of each section was produced by A$^*$ with level sum.
+
+{\Large \textbf{Planning Problem 1}}
 \vskip1pt
-The first idea was to value the squares in the center of the board more than those on the edges. I decided this because the edge squares have fewer moves in general than those in the middle. I used the $\ell_1$-norm (or Manhattan distance) to compute the distance of each player from the center. The heuristic returned the difference of the two player's difference from the center. Also, it was simple to reverse that value, so I include those results here as well:
+Below is the table of all metrics for the tested searches.
+
 \vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|}
   \hline
-   & Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
+  {\bf Search} & {\bf Plan Length} & {\bf Time(seconds)} & {\bf Expansions} & {\bf Goal Tests} & {\bf New Nodes}\\
   \hline
-  Value Center & 83\% & 71\% & 62\% & 56\% & 68\% & 57\% & 61\% & 65.43\%\\
+  BFS & {\color{red}6} & 0.9246 & 43 & 56 & 180\\
   \hline
-  Value Edges & 80\% & 73\% & 62\% & 51\% & 70\% & 50\% & 54\% & 62.86\%\\
+  DFS & 20 & 0.4332 & 21 & 22 & 84\\
+  \hline
+  UCS & {\color{red}6} & 1.1363 & 55 & 57 & 224\\
+  \hline
+  Greedy with h\_1 & {\color{red}6} & {\color{red}0.1414} & {\color{red}7} & {\color{red}9} & {\color{red}28}\\
+  \hline
+  A$^*$ with h\_1 & {\color{green}6} & 1.1292 & 55 & 57 & 224\\
+  \hline
+  A$^*$ with IP & {\color{green}6} & {\color{green}0.8567} & 41 & 43 & 170\\
+  \hline
+  A$^*$ with LS & {\color{green}6} & 3.5986 & {\color{green}11} & {\color{green}13} & {\color{green}50}\\
   \hline
 \end{tabular}
 \vskip0.5em
-There does not seem to be a big difference in performance between these two strategies. However, valuing center position seems to do better against the alpha-beta test agents. There might also be a difference when we consider these two strategies for early moves. For example, if we can use a lot of the edge squares early in the game and leave ourselves with more squares in the center, then perhaps we would have an advantage. We will see how this worked out in a later section. These are \texttt{close\_to\_center\_score} and \texttt{far\_from\_center\_score} in the code.
+This first problem is interesting because there are relatively few actions that can be performed in any given state. Therefore, there isn't much variation in the number of nodes expanded (compared to the other problems). The best of the uniformed searches here is breadth-first search. This is the case because there are few actions in each state. We also see that depth-first search is the fastest, but does not find an optimal path (depth-first search will rarely find such a path). We also see that the greedy algorithm finds an optimal path in this case, while it does not in the other problems.
 
-The next positional heuristic I had in mind compared the distance of the two players' position. Similar to the above, there were two versions: one that valued being close to the opponent and one that valued be as far as possible from the opponent.
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
-  \hline
-   & Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
-  \hline
-  Close & 75\% & 69\% & 60\% & 55\% & 71\% & 56\% & 61\% & 63.86\%\\
-  \hline
-  Far & 81\% & 75\% & 55\% & 50\% & 71\% & 56\% & 61\% & 64.86\%\\
-  \hline
-\end{tabular}
-\vskip0.5em
-These are \texttt{close\_to\_opponent\_score} and \texttt{far\_from\_opponent\_score} in the code. Neither of these strategies seems to be advantageous. In fact, we don't see much difference if we compare these results to the results of the ``distance from center'' heuristics. More importantly, none of these positional heuristics out performed ID\_Improved.
+For the automatic heuristics, we can see that A$^*$ with level sum performs much better as far as the number of nodes created and expanded. As the complexity increases, this will improve. However, we see that this search takes longer in terms of computation time. I believe that this extra time comes from traversing the planning graph to calculate the level sum heuristic.
+There are many different versions of an optimal path, but the one that A$^*$ with LS calculated is the following:\\
+Load(C1, P1, SFO)\\
+Fly(P1, SFO, JFK)\\
+Load(C2, P2, JFK)\\
+Fly(P2, JFK, SFO)\\
+Unload(C1, P1, JFK)\\
+Unload(C2, P2, SFO)\\
 
-{\Large \textbf{Generalized Versions of the Improved Heuristic}}
+
+{\Large \textbf{Planning Problem 2}}
 \vskip1pt
-Next I was determined to generalize the idea behind ID\_Improved. I realized that ID\_Improved only considered how many moves each player had in their very next move. So I devised a way (with the help of looking up knight movement analysis in chess) to take all successive moves into account. First, consider the following 5-by-5 Isolation board (X denotes a blocked square):
+Below is the table of all metrics for the tested searches.
 \vskip0.5em
-\begin{tabular}{|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|}
   \hline
-  \phantom{X}& \phantom{X}&X &\phantom{X} &X \\
+  {\bf Search} & {\bf Plan Length} & {\bf Time(seconds)} & {\bf Expansions} & {\bf Goal Tests} & {\bf New Nodes}\\
   \hline
-  X&X &1 & & \\
+  BFS & {\color{red}9} & 823.388 & 3343 & 4609 & 30509\\
   \hline
-  & & & X& \\
+  DFS & 619 & {\color{red}153.295} & {\color{red}624} & {\color{red}625} & {\color{red}5602}\\
   \hline
-  &X & & & \\
+  UCS & {\color{red}9} & 1228.510 & 4826 & 4828 & 43788\\
   \hline
-  & & &2 & \\
+  Greedy with h\_1 & 19 & 157.236 & 635 & 637 & 25696\\
+  \hline
+  A$^*$ with h\_1 & {\color{green}9} & 1232.158 & 4826 & 4828 & 43788\\
+  \hline
+  A$^*$ with IP & {\color{green}9} & 384.319 & 1496 & 1498 & 13720\\
+  \hline
+  A$^*$ with LS & {\color{green}9} & {\color{green}370.436} & {\color{green}86} & {\color{green}88} & {\color{green}841}\\
   \hline
 \end{tabular}
 \vskip0.5em
-For each player we use breadth first search to find the shortest path to every other square, including the blocked squares.
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 1}\\
-  \hline
-  1 & 2 & 3 & 2 & 1 \\
-  \hline
-  2 & 3 & 0 & 3 & 2 \\
-  \hline
-  1 & 2 & 3 & 2 & 1 \\
-  \hline
-  4 & 1 & 2 & 1 & 4 \\
-  \hline
-  3 & 2 & 3 & 2 & 3 \\
-  \hline
-\end{tabular}
-\hskip1in
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 2}\\
-  \hline
-  3 & 2 & 3 & 2 & 3 \\
-  \hline
-   2 & 3 & 2 & 3 & 2 \\
-  \hline
-   3 & 4 & 1 & 2 & 1 \\
-  \hline
-   4 & 1 & 2 & 3 & 4 \\
-  \hline
-  3 & 2 & 3 & 0 & 3 \\
-  \hline
-\end{tabular}
-\vskip0.5em
-Next, we take some $0<r<1$ and calculate $r^n$ for each square:
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 1}\\
-  \hline
-  $r^1$ & $r^2$ & $r^3$ & $r^2$ & $r^1$ \\
-  \hline
-  $r^2$ & $r^3$ & $r^0$ & $r^3$ & $r^2$ \\
-  \hline
-  $r^1$ & $r^2$ & $r^3$ & $r^2$ & $r^1$ \\
-  \hline
-  $r^4$ & $r^1$ & $r^2$ & $r^1$ & $r^4$ \\
-  \hline
-  $r^3$ & $r^2$ & $r^3$ & $r^2$ & $r^3$ \\
-  \hline
-\end{tabular}
-\hskip1in
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 2}\\
-  \hline
-  $r^3$ & $r^2$ & $r^3$ & $r^2$ & $r^3$ \\
-  \hline
-   $r^2$ & $r^3$ & $r^2$ & $r^3$ & $r^2$ \\
-  \hline
-   $r^3$ & $r^4$ & $r^1$ & $r^2$ & $r^1$ \\
-  \hline
-   $r^4$ & $r^1$ & $r^2$ & $r^3$ & $r^4$ \\
-  \hline
-  $r^3$ & $r^2$ & $r^3$ & $r^0$ & $r^3$ \\
-  \hline
-\end{tabular}
-\vskip0.5em
-Note that these only have to be calculated once and we can store these as a 2D-list in python. Now we take the unblocked squares and add their values for each player and subtract these totals. For example, if $r = 0.5$, then
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 1}\\
-  \hline
-  $0.5$ & $0.25$ &  & $0.25$ &  \\
-  \hline
-   &  & $1$ & $0.125$ & $0.25$ \\
-  \hline
-  $0.5$ & $0.25$ & $0.125$ &  & $0.5$ \\
-  \hline
-  $.0625$ &  & $0.25$ & $0.5$ & $.0625$ \\
-  \hline
-  $0.125$ & $0.25$ & $0.125$ &  & $0.125$ \\
-  \hline
-\end{tabular}
-\hskip1in
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 2}\\
-  \hline
-  $0.125$ & $0.25$ &  & $0.25$ &  \\
-  \hline
-   &  & & $0.125$ & $0.25$ \\
-  \hline
-   $0.125$ & $.0625$ & $0.5$ & & $0.5$ \\
-  \hline
-   $.0625$ & & $0.125$ & $0.125$ & $.0625$ \\
-  \hline
-  $0.125$ & $0.25$ & $0.125$ & $1$ & $0.125$ \\
-  \hline
-\end{tabular}
-\vskip0.5em
-So Player 1 has a score of $5.25$, Player 2 has a score of $4.1875$, and the heuristic will output $5.25-4.1875 = 1.0625$. We used the example of $r = 0.5$ here, but we can use whatever $r$ we like as long as $0 < r < 1$. We require $0 < r < 1$ because each subsequent move has diminished value because it can be blocked before we are able to make it. Below are the outcomes of some values of $r$:
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|c|}
-  \hline
-  r & Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
-  \hline
-  ${\bf \frac{1}{2}}$ & 83\% & 76\% & 66\% & 71\% & 74\% & 65\% & 55\% & 70.00\%\\
-  \hline
-  ${\bf\frac{1}{3}}$ & 94\% & 78\% & 70\% & 71\% & 70\% & 64\% & 70\% & 73.86\%\\
-  \hline
-  ${\bf\frac{1}{4}}$ & 84\% & 81\% & 64\% & 68\% & 77\% & 59\% & 61\% & 70.57\%\\
-  \hline
-  ${\bf\frac{1}{5}}$ & 83\% & 81\% & 69\% & 60\% & 74\% & 64\% & 60\% & 70.14\%\\
-  \hline
-  ${\bf\frac{1}{6}}$ & 85\% & 78\% & 74\% & 66\% & 79\% & 67\% & 61\% & 72.86\%\\
-  \hline
-  ${\bf\frac{1}{7}}$ & 84\% & 81\% & 65\% & 64\% & 81\% & 65\% & 72\% & 73.14\%\\
-  \hline
-  ${\bf\frac{1}{8}}$ & 89\% & 70\% & 69\% & 64\% & 75\% & 70\% & 64\% & 71.57\%\\
-  \hline
-  ${\bf\frac{1}{9}}$ & 81\% & 84\% & 66\% & 64\% & 78\% & 64\% & 62\% & 71.29\%\\
-  \hline
-  ${\bf\frac{1}{10}}$ & 88\% & 89\% & 74\% & 73\% & 71\% & 70\% & 69\% & 76.29\%\\
-  \hline
-\end{tabular}
-\vskip0.5em
-Regardless of the value of $r$, it is clear that this method is superior to ID\_Improved. The value of $r$ that stands out the most is $r = \frac{1}{10}$ because it performed the best overall. However, this value seems arbitrary and unsatisfying. This led me to the next version of this algorithm.
+We see once again that depth-first search performs relatively well in terms of the metrics, but fails to find an optimal path. As a matter of fact, the path it finds is nearly 69 times longer than optimal. Also, we see that the greedy algorithm does not find an optimal path, but it is significantly better than depth-first search with comparable metrics. This is consistent with the fact that the greedy algorithm is not guaranteed to be admissible (AIMA page 376).
 
-Instead of calculating the shortest paths on the game board as if it were empty and then removing the blocked squares, we should calculate the shortest path with the blocked squares considered at each step. This makes storing the 2D-list much more difficult, but it turns out that we can do without the storage. Using this idea, the shortest path arrays now look like:
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 1} \\
-  \hline
-  1 & 2 & X & 2 & X \\
-  \hline
-  X & X & 0 & 3 & 2 \\
-  \hline
-  1 & 2 & 3 & X & 1 \\
-  \hline
-  4 & X & 2 & 1 & 4 \\
-  \hline
-  3 & 2 & 3 & X & 3 \\
-  \hline
-\end{tabular}
-\hskip1in
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 2} \\
-  \hline
-  5 & 2 & X & 2 & X \\
-  \hline
-  X & X & X & 3 & 2 \\
-  \hline
-  3 & 4 & 1 & X & 1 \\
-  \hline
-  2 & X & 2 & 3 & 2 \\
-  \hline
-  3 & 2 & 3 & 0 & 3 \\
-  \hline
-\end{tabular}
-\vskip0.5em
-Now instead of choosing $0 < r < 1$, add one to the length of the path and take the reciprocal:
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 1} \\
-  \hline
-  $\frac{1}{2}$ & $\frac{1}{3}$ & X & $\frac{1}{3}$ & X \\
-  \hline
-  X & X & $1$ & $\frac{1}{4}$ & $\frac{1}{3}$ \\
-  \hline
-  $\frac{1}{2}$ & $\frac{1}{3}$ & $\frac{1}{4}$ & X & $\frac{1}{2}$ \\
-  \hline
-  $\frac{1}{5}$ & X & $\frac{1}{3}$ & $\frac{1}{2}$ & $\frac{1}{5}$ \\
-  \hline
-  $\frac{1}{4}$ & $\frac{1}{3}$ & $\frac{1}{4}$ & X & $\frac{1}{4}$ \\
-  \hline
-\end{tabular}
-\hskip1in
-\begin{tabular}{|c|c|c|c|c|}
-  \multicolumn{5}{c}{Player 2} \\
-  \hline
-  $\frac{1}{6}$ & $\frac{1}{3}$ & X & $\frac{1}{3}$ & X \\
-  \hline
-  X & X & X & $\frac{1}{3}$ & $\frac{1}{3}$ \\
-  \hline
-  $\frac{1}{4}$ & $\frac{1}{5}$ & $\frac{1}{2}$ & X & $\frac{1}{2}$ \\
-  \hline
-  $\frac{1}{3}$ & X & $\frac{1}{3}$ & $\frac{1}{4}$ & $\frac{1}{3}$ \\
-  \hline
-  $\frac{1}{4}$ & $\frac{1}{3}$ & $\frac{1}{4}$ & $1$ & $\frac{1}{4}$\\
-  \hline
-\end{tabular}
-\vskip0.5em
-From here, we add the squares for each player and take the difference. For Player 1 we have a score of $6.65$, and for Player 2 we have a score of $5.033$. Therefore, the heuristic returns $6.65-5.033 = 1.62$. Below are the outcomes of this heuristic:
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
-  \hline
-  Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
-  \hline
-  86\% & 88\% & 68\% & 68\% & 82\% & 67\% & 63\% & 74.57\%\\
-  \hline
-\end{tabular}
-\vskip0.5em
-This heuristic performs better than ID\_Improved and on the same scale as the first generalized versions of ID\_Improved. However, because we avoid the need to choose an $0 < r < 1$, this heuristic will be the one we use going forward. Let's call this one \texttt{bfs\_score}.
+For the automatic heuristics, we begin to see the power of A$^*$ search with level sum. Not only does this search deal with at least 15 times fewer nodes, but it also the fastest of these searches. Below is the optimal path found  by A$^*$ search with level sum:\\
+Load(C1, P1, SFO)\\
+Fly(P1, SFO, JFK)\\
+Load(C2, P2, JFK)\\
+Fly(P2, JFK, SFO)\\
+Load(C3, P3, ATL)\\
+Fly(P3, ATL, SFO)\\
+Unload(C3, P3, SFO)\\
+Unload(C2, P2, SFO)\\
+Unload(C1, P1, JFK)\\
 
-{\Large \textbf{Combinations of the Two}}
+
+{\Large \textbf{Planning Problem 3}}
 \vskip1pt
-The final set of heuristics we will analyze are a combination of \texttt{bfs\_score} with the positional heuristics discussed above. One of these will be our final custom heuristic.
-
-First, we will look at \texttt{close\_to\_opponent\_score + bfs\_score}:
+Below is the table of all metrics for the tested searches.
 \vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|}
   \hline
-  Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
+  {\bf Search} & {\bf Plan Length} & {\bf Time(seconds)} & {\bf Expansions} & {\bf Goal Tests} & {\bf New Nodes}\\
   \hline
-  85\% & 83\% & 73\% & 64\% & 79\% & 62\% & 62\% & 72.57\%\\
+  BFS & {\color{red}12} & 4102.596 & 14663 & 18098 & 129631\\
+  \hline
+  DFS & 392 & {\color{red}108.051} & {\color{red}408} & {\color{red}409} & {\color{red}3364}\\
+  \hline
+  UCS & {\color{red}12} & 5496.508 & 18221 & 18223 & 159612\\
+  \hline
+  Greedy with h\_1 & 27 & 1569.139 & 5530 & 5532 & 48705\\
+  \hline
+  A$^*$ with h\_1 & {\color{green}12} & 5434.953 & 18221 & 18223 & 159612\\
+  \hline
+  A$^*$ with IP & {\color{green}12} & {\color{green}1585.427} & 5118 & 5120 & 45650\\
+  \hline
+  A$^*$ with LS & {\color{green}12} & 2469.787 & {\color{green}403} & {\color{green}405} & {\color{green}3708}\\
   \hline
 \end{tabular}
 \vskip0.5em
+The results for this problem are comparatively not much different from those of Problem 2. This problem is more difficult so there are more nodes to deal with and the searches take more time, but the comparison between the search methods remain the same. That is, the greedy and depth-first searches do not find an optimal paths, although they perform well in the metrics. Of the automatic heuristics, A$^*$ search with level sum is the best performing except for time elapsed: A$^*$ search with ignore preconditions is faster. Below is the optimal path found by A$^*$ search with level sum.\\
+Load(C2, P2, JFK)\\
+Fly(P2, JFK, ORD)\\
+Load(C4, P2, ORD)\\
+Fly(P2, ORD, SFO)\\
+Load(C1, P1, SFO)\\
+Fly(P1, SFO, ATL)\\
+Load(C3, P1, ATL)\\
+Fly(P1, ATL, JFK)\\
+Unload(C4, P2, SFO)\\
+Unload(C2, P2, SFO)\\
+Unload(C3, P1, JFK)\\
+Unload(C1, P1, JFK)\\
 
-Next, \texttt{far\_from\_center\_score + bfs\_score}:
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
-  \hline
-  Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
-  \hline
-  87\% & 83\% & 63\% & 61\% & 77\% & 66\% & 53\% & 70.00\%\\
-  \hline
-\end{tabular}
-\vskip0.5em
-
-\texttt{close\_to\_opponent\_score + bfs\_score}:
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
-  \hline
-  Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
-  \hline
-  92\% & 86\% & 64\% & 71\% & 83\% & 75\% & 60\% & 75.86\%\\
-  \hline
-\end{tabular}
-\vskip0.5em
-
-Lastly, \texttt{far\_from\_opponent\_score + bfs\_score}
-\vskip0.5em
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
-  \hline
-  Random & MM\_N & MM\_O & MM\_I & AB\_N & AB\_O & AB\_I & Total\\
-  \hline
-  87\% & 76\% & 62\% & 64\% & 81\% & 62\% & 53\% & 69.29\%\\
-  \hline
-\end{tabular}
-\vskip0.5em
-The highest performing heuristic here is \texttt{close\_to\_opponent\_score + bfs\_score}. The performance is very close to \texttt{bfs\_score} alone, but the newer version was able to beat the Random opponent 92\% of the time. For these reasons, this is our \texttt{custom\_score} in the code.
 
 {\Large \textbf{Conclusions}}
 \vskip1pt
-Overall, this project was interesting and fun to work on. If I had more time I would try more combinations of the heuristics with tuned scaling factors for each term. I would also try shifting the strategy as the game progressed. For example, we might try taking as many edge squares as we can in the beginning and shift to taking as many center squares as possible. Of course, we could also try the reverse as well.
+Overall, A$^*$ search with level sum is the search algorithm seems to be the best choice. It finds an optimal path for all problems and among those searches that find an optimal path, it has a short runtime and deals with the least amount of nodes by far. However, as noted in AIMA, the level sum would not be admissible if there was some dependence between the goals. In that case, we would choose A$^*$ search with ignore preconditions. However, if there were dependence between the goals, we would need to change our implementation of this heuristic.
 
-It is worth noting two additional things regarding my work on this project:
-\begin{enumerate}
-  \item None of the tests I reported on here timed out during the run. All of them (run on my MacBook Pro) were able to produce a move with \texttt{self.TIMER\_THRESHOLD = 10.}
-  \item I was able to determine that if the agents were able to choose their first moves instead of begin positioned on the board randomly, then the second player is able to win almost every time. I say ``almost'' because I was not able to prove it mathematically. The proof would follow from the fact that the parity of the row and column of the player changes after every move. That is, if the row and column of the player's position are both odd, then after the next move one will remain odd and the other will become even.
-\end{enumerate}
-
+Of the uniformed searches, breadth-first search would be the choice if optimality is required. However, if time is the ultimate consideration, then greedy search with h\_1 would be a good choice. It does not find an optimal path, but the speed improvement may be enough to outweigh the difference is path length.
 
 \end{document}
