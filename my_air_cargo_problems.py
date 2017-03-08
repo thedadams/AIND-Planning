@@ -199,6 +199,7 @@ class AirCargoProblem(Problem):
         executed.
         '''
         # Count the goals that are not true in the current state.
+        # This is fine for us because any one action can only complete one goal.
         count = len([s for (i, s) in enumerate(self.state_map)
                      if s in self.goal and node.state[i] == "F"])
         return count
