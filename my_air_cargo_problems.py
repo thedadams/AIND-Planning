@@ -191,6 +191,29 @@ class AirCargoProblem(Problem):
         pg_levelsum = pg.h_levelsum()
         return pg_levelsum
 
+    def h_pg_setlevel(self, node: Node):
+        '''
+        This heuristic uses a planning graph representation of the problem
+        state space to estimate the number of actions that must be carried
+        out to achieve all goals.
+        '''
+        # requires implemented PlanningGraph class
+        pg = PlanningGraph(self, node.state)
+        pg_setlevel = pg.h_setlevel()
+        return pg_setlevel
+
+    def h_pg_maxlevel(self, node: Node):
+        '''
+        This heuristic uses a planning graph representation of the problem
+        state space to estimate the max of all actions that must be carried
+        out from the current state in order to satisfy each individual goal
+        condition.
+        '''
+        # requires implemented PlanningGraph class
+        pg = PlanningGraph(self, node.state)
+        pg_maxlevel = pg.h_maxlevel()
+        return pg_maxlevel
+
     def h_ignore_preconditions(self, node: Node):
         '''
         This heuristic estimates the minimum number of actions that must be

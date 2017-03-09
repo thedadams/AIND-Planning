@@ -494,13 +494,9 @@ class PlanningGraph():
         :param node_s2: PgNode_s
         :return: bool
         '''
-        for a1 in node_s1.parents:
-            for a2 in node_s2.parents:
-                # If the two parents are the same node or not mutex,
-                # then these nodes should not be mutex.
-                if a1 == a2 or not a1.is_mutex(a2):
-                    return False
-        return True
+        icon_support = [a1 != a2 and a1.is_mutex(a2)
+                        for a1 in node_s1.parents for a2 in node_s2.parents]
+        return all(icon_support)
 
     def h_levelsum(self) -> int:
         '''The sum of the level costs of the individual goals (admissible if goals independent)
@@ -518,3 +514,33 @@ class PlanningGraph():
                     level_sum += i
                     goals_found.add(goal)
         return level_sum
+
+    def h_maxlevel(self) -> int:
+        '''The max of the level costs of the individual goals
+
+        :return: int
+        '''
+        max_level = 0
+        # Keep track of the goals we already found.
+        goals_found = set()
+        for i, literals in enumerate(self.s_levels):
+            for goal in self.problem.goal:
+                goal_node = PgNode_s(goal, True)
+                # If the goal is at this level and we haven't seen it yet.
+                if goal_node in literals and goal not in goals_found:
+                    max_level = i
+                    goals_found.add(goal)
+        return max_level
+
+    def h_setlevel(self) -> float:
+        '''The level at which all goals appear in the planning graph,
+        no pair of them being mutually exclusive.
+
+        :return: float
+        '''
+        for i in range(len(self.s_levels)):
+            goals = set([s for s in self.s_levels[i] if s.literal in self.problem.goal])
+            if len(goals) == len(self.problem.goal):
+                if all([s1.is_mutex(s2) for s1 in goals for s2 in goals]):
+                    return float(i)
+        return float("inf")
