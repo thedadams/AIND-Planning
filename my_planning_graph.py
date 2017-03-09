@@ -312,7 +312,7 @@ class PlanningGraph():
             node = PgNode_a(action)
             parents = set([s for s in self.s_levels[level] if s in node.prenodes])
             # If all preconditions are satisfied for this action, we add it.
-            if node.prenodes.issubset(parents):
+            if len(node.prenodes) <= len(parents):
                 for parent in parents:
                     parent.children.add(node)
                     node.parents.add(parent)
@@ -404,7 +404,7 @@ class PlanningGraph():
         # The second action adds something and the first one removes it.
         incon.extend([effect in node_a1.action.effect_rem for effect in node_a2.action.effect_add])
         # If any of these are true, then the nodes are mutex.
-        return any(incon)
+        return len(incon) == 0 or any(incon)
 
     def interference_mutex(self, node_a1: PgNode_a, node_a2: PgNode_a) -> bool:
         '''
@@ -494,9 +494,8 @@ class PlanningGraph():
         :param node_s2: PgNode_s
         :return: bool
         '''
-        icon_support = [a1 != a2 and a1.is_mutex(a2)
-                        for a1 in node_s1.parents for a2 in node_s2.parents]
-        return all(icon_support)
+        icon_support = [a1.is_mutex(a2) for a1 in node_s1.parents for a2 in node_s2.parents]
+        return len(icon_support) != 0 and all(icon_support)
 
     def h_levelsum(self) -> int:
         '''The sum of the level costs of the individual goals (admissible if goals independent)
@@ -531,16 +530,3 @@ class PlanningGraph():
                     max_level = i
                     goals_found.add(goal)
         return max_level
-
-    def h_setlevel(self) -> float:
-        '''The level at which all goals appear in the planning graph,
-        no pair of them being mutually exclusive.
-
-        :return: float
-        '''
-        for i in range(len(self.s_levels)):
-            goals = set([s for s in self.s_levels[i] if s.literal in self.problem.goal])
-            if len(goals) == len(self.problem.goal):
-                if all([s1.is_mutex(s2) for s1 in goals for s2 in goals]):
-                    return float(i)
-        return float("inf")

@@ -36,7 +36,6 @@ SEARCHES = [["breadth_first_search", breadth_first_search, ""],
             ['astar_search', astar_search, 'h_1'],
             ['astar_search', astar_search, 'h_ignore_preconditions'],
             ['astar_search', astar_search, 'h_pg_levelsum'],
-            ['astar_search', astar_search, 'h_pg_setlevel'],
             ['astar_search', astar_search, 'h_pg_maxlevel'],
             ]
 
