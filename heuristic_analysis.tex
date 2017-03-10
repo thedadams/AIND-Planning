@@ -25,6 +25,8 @@
 \vskip1pt
 This is my analysis of the planning problems listed in README.md. The goal of this project was to successfully implement parts of the classical planning problem, planning graph search, and the \texttt{GRAPHPLAN} algorithm. After passing the test cases, I ran the code to find solutions using 7 of the 10 search algorithms: breadth-first search (BFS), depth-first search (DFS), uniform cost search (UCS), greedy best-first graph search (Greedy with h\_1), and three A$^*$ searches (with h\_1, ignore preconditions (IP), and level sum (LS)).
 
+In addition to the required heuristics, I also implemented a version max-level and set-level heuristics from AIMA (on page 382). You can find these in the table as A$^*$ with ML and A$^*$ with SL, respectively.
+
 One note on how I ran the algorithms. I used an older computer that I could run the solutions on without worrying about how long it took. The times would be significantly improved if I used a faster computer. For example, the A$^*$ with level sum search for problem 3 took 2469.787 seconds. On my faster machine, this took roughly half the amount of time: 1223.57 seconds.
 
 Also, in each table below, the best performance in a metric for the uninformed search algorithms is given in red and the best for the automatic heuristics is given in green. The optimal path given at the end of each section was produced by A$^*$ with level sum.
@@ -50,20 +52,24 @@ Below is the table of all metrics for the tested searches.
   \hline
   A$^*$ with IP & {\color{green}6} & {\color{green}0.8567} & 41 & 43 & 170\\
   \hline
-  A$^*$ with LS & {\color{green}6} & 3.5986 & {\color{green}11} & {\color{green}13} & {\color{green}50}\\
+  A$^*$ with LS & {\color{green}6} & 3.5986 & 11 & 13 & 50\\
+  \hline
+  A$^*$ with ML & {\color{green}6} & 7.7257 & 31 & 33 & 126\\
+  \hline
+  A$^*$ with SL & {\color{green}6} & 2.8543 & {\color{green}8} & {\color{green}10} & {\color{green}35}\\
   \hline
 \end{tabular}
 \vskip0.5em
 This first problem is interesting because there are relatively few actions that can be performed in any given state. Therefore, there isn't much variation in the number of nodes expanded (compared to the other problems). The best of the uniformed searches here is breadth-first search. This is the case because there are few actions in each state. We also see that depth-first search is the fastest, but does not find an optimal path (depth-first search will rarely find such a path). We also see that the greedy algorithm finds an optimal path in this case, while it does not in the other problems.
 
-For the automatic heuristics, we can see that A$^*$ with level sum performs much better as far as the number of nodes created and expanded. As the complexity increases, this will improve. However, we see that this search takes longer in terms of computation time. I believe that this extra time comes from traversing the planning graph to calculate the level sum heuristic.
+For the automatic heuristics, we can see that A$^*$ with level sum and set-level perform much better as far as the number of nodes created and expanded. However, we see that these searches take longer in terms of computation time. I believe that this extra time comes from traversing the planning graph to calculate the heuristics.
 There are many different versions of an optimal path, but the one that A$^*$ with LS calculated is the following:\\
-Load(C1, P1, SFO)\\
+\texttt{Load(C1, P1, SFO)\\
 Fly(P1, SFO, JFK)\\
 Load(C2, P2, JFK)\\
 Fly(P2, JFK, SFO)\\
 Unload(C1, P1, JFK)\\
-Unload(C2, P2, SFO)\\
+Unload(C2, P2, SFO)\\}
 
 
 {\Large \textbf{Planning Problem 2}}
@@ -88,12 +94,16 @@ Below is the table of all metrics for the tested searches.
   \hline
   A$^*$ with LS & {\color{green}9} & {\color{green}370.436} & {\color{green}86} & {\color{green}88} & {\color{green}841}\\
   \hline
+  A$^*$ with ML & {\color{green}9} & 6492.6056 & 2049 & 2051 & 18980\\
+  \hline
+  A$^*$ with SL & {\color{green}9} & 886.0285 & 189 & 191 & 1749\\
+  \hline
 \end{tabular}
 \vskip0.5em
 We see once again that depth-first search performs relatively well in terms of the metrics, but fails to find an optimal path. As a matter of fact, the path it finds is nearly 69 times longer than optimal. Also, we see that the greedy algorithm does not find an optimal path, but it is significantly better than depth-first search with comparable metrics. This is consistent with the fact that the greedy algorithm is not guaranteed to be admissible (AIMA page 376).
 
-For the automatic heuristics, we begin to see the power of A$^*$ search with level sum. Not only does this search deal with at least 15 times fewer nodes, but it also the fastest of these searches. Below is the optimal path found  by A$^*$ search with level sum:\\
-Load(C1, P1, SFO)\\
+For the automatic heuristics, we begin to see the power of A$^*$ search with level sum. Not only does this search deal with fewer nodes, but it also the fastest of these searches. Below is the optimal path found  by A$^*$ search with level sum:\\
+\texttt{Load(C1, P1, SFO)\\
 Fly(P1, SFO, JFK)\\
 Load(C2, P2, JFK)\\
 Fly(P2, JFK, SFO)\\
@@ -101,7 +111,7 @@ Load(C3, P3, ATL)\\
 Fly(P3, ATL, SFO)\\
 Unload(C3, P3, SFO)\\
 Unload(C2, P2, SFO)\\
-Unload(C1, P1, JFK)\\
+Unload(C1, P1, JFK)\\}
 
 
 {\Large \textbf{Planning Problem 3}}
@@ -126,10 +136,14 @@ Below is the table of all metrics for the tested searches.
   \hline
   A$^*$ with LS & {\color{green}12} & 2469.787 & {\color{green}403} & {\color{green}405} & {\color{green}3708}\\
   \hline
+  A$^*$ with ML & {\color{green}12} & 37858.3082 & 7992 & 7994 & 72760\\
+  \hline
+  A$^*$ with SL & {\color{green}12} & 7728.2643 & 1192 & 1194 & 10768\\
+  \hline
 \end{tabular}
 \vskip0.5em
 The results for this problem are comparatively not much different from those of Problem 2. This problem is more difficult so there are more nodes to deal with and the searches take more time, but the comparison between the search methods remain the same. That is, the greedy and depth-first searches do not find an optimal paths, although they perform well in the metrics. Of the automatic heuristics, A$^*$ search with level sum is the best performing except for time elapsed: A$^*$ search with ignore preconditions is faster. Below is the optimal path found by A$^*$ search with level sum.\\
-Load(C2, P2, JFK)\\
+\texttt{Load(C2, P2, JFK)\\
 Fly(P2, JFK, ORD)\\
 Load(C4, P2, ORD)\\
 Fly(P2, ORD, SFO)\\
@@ -140,13 +154,15 @@ Fly(P1, ATL, JFK)\\
 Unload(C4, P2, SFO)\\
 Unload(C2, P2, SFO)\\
 Unload(C3, P1, JFK)\\
-Unload(C1, P1, JFK)\\
+Unload(C1, P1, JFK)\\}
 
 
 {\Large \textbf{Conclusions}}
 \vskip1pt
+Before I pick my best performing heuristic, I would like to make a couple notes on A$^*$ with SL. The book suggests returning infinity if it is not possible to find a level where all the goals are not mutually exclusive. When I used this, Problem 1 was solved perfectly. However this heuristic would not return an optimal path for Problems 2 and 3. Therefore, I do not return infinity in this case (the heuristic returns the number of levels plus 1). This heuristic is still admissible, but takes longer and explores more nodes. As stated in AIMA, set-level dominates max-level, which implies that set-level is a superior heuristic. We do see this throughout.
+
 Overall, A$^*$ search with level sum is the search algorithm seems to be the best choice. It finds an optimal path for all problems and among those searches that find an optimal path, it has a short runtime and deals with the least amount of nodes by far. However, as noted in AIMA, the level sum would not be admissible if there was some dependence between the goals. In that case, we would choose A$^*$ search with ignore preconditions. However, if there were dependence between the goals, we would need to change our implementation of this heuristic.
 
-Of the uniformed searches, breadth-first search would be the choice if optimality is required. However, if time is the ultimate consideration, then greedy search with h\_1 would be a good choice. It does not find an optimal path, but the speed improvement may be enough to outweigh the difference is path length.
+Of the uniformed searches, breadth-first search would be the choice if optimality is required. However, if time is the ultimate consideration, then greedy search with h\_1 would be a good choice. It does not find an optimal path, but the speed improvement may be enough to outweigh the difference is path length depending on the application.
 
 \end{document}
