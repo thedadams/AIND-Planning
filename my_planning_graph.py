@@ -537,12 +537,17 @@ class PlanningGraph():
         return max_level
 
     def h_setlevel(self) -> int:
-        '''The max of the level costs of the individual goals
+        '''This heuristic finds the level where none of the goals are pairwise mutex,
+            if such a level exists. If not, we return sys.maxsize.
 
         :return: int
         '''
         for i, level in enumerate(self.s_levels):
+            # Find all the goals in this level.
             goals = [s for s in level if s.symbol in self.problem.goal and s.is_pos]
-            if len(goals) >= len(self.problem.goal) and all([not s1.is_mutex(s2) for s1 in goals for s2 in goals]):
+            if len(goals) == len(self.problem.goal) and all([not s1.is_mutex(s2) for s1 in goals for s2 in goals]):
+                # If we have the correct number of goals and none of them are pairwise mutex.
                 return i
+        # If we can't find such a level, then we return sys.maxsize.
+        # I tried this with float("inf"), but that doesn't work for Problem 2.
         return maxsize
