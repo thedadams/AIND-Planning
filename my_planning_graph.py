@@ -2,7 +2,6 @@ from aimacode.planning import Action
 from aimacode.search import Problem
 from aimacode.utils import expr
 from lp_utils import decode_state
-from sys import maxsize
 
 class PgNode():
     ''' Base class for planning graph nodes.
@@ -548,6 +547,6 @@ class PlanningGraph():
             if len(goals) == len(self.problem.goal) and all([not s1.is_mutex(s2) for s1 in goals for s2 in goals]):
                 # If we have the correct number of goals and none of them are pairwise mutex.
                 return i
-        # If we can't find such a level, then we return sys.maxsize.
-        # I tried this with float("inf"), but that doesn't work for Problem 2.
-        return maxsize
+        # If we can't find such a level, then we return the number of s levels + 1.
+        # I tried this with float("inf"), but that doesn't work for Problem 2 or 3.
+        return len(self.s_levels) + 1
