@@ -2,7 +2,7 @@ from aimacode.planning import Action
 from aimacode.search import Problem
 from aimacode.utils import expr
 from lp_utils import decode_state
-
+from sys import maxsize
 
 class PgNode():
     ''' Base class for planning graph nodes.
@@ -312,7 +312,7 @@ class PlanningGraph():
             node = PgNode_a(action)
             parents = set([s for s in self.s_levels[level] if s in node.prenodes])
             # If all preconditions are satisfied for this action, we add it.
-            if len(node.prenodes) <= len(parents):
+            if node.prenodes.issubset(parents):
                 for parent in parents:
                     parent.children.add(node)
                     node.parents.add(parent)
@@ -335,13 +335,18 @@ class PlanningGraph():
         #   may be "added" to the set without fear of duplication.  However, it is important to then correctly create and connect
         #   all of the new S nodes as children of all the A nodes that could produce them, and likewise add the A nodes to the
         #   parent sets of the S nodes
-        self.s_levels.append(set())
+        next_literal_level = dict()
         # We add all effect nodes from the previous action level.
         for action_node in self.a_levels[level - 1]:
             for literal_node in action_node.effnodes:
-                self.s_levels[level].add(literal_node)
-                action_node.children.add(literal_node)
+                # For actions with the same effects, we need to make sure we are adding the same literal node.
+                if literal_node in next_literal_level:
+                    literal_node = next_literal_level[literal_node]
                 literal_node.parents.add(action_node)
+                action_node.children.add(literal_node)
+                next_literal_level[literal_node] = literal_node
+        # Once we have all of the literal nodes, we add them to the level.
+        self.s_levels.append(set(next_literal_level.values()))
 
     def update_a_mutex(self, nodeset):
         ''' Determine and update sibling mutual exclusion for A-level nodes
@@ -359,7 +364,7 @@ class PlanningGraph():
             mutex set in each PgNode_a in the set is appropriately updated
         '''
         nodelist = list(nodeset)
-        for i, n1 in enumerate(nodelist[:-1]):
+        for i, n1 in enumerate(nodelist):
             for n2 in nodelist[i + 1:]:
                 if (self.serialize_actions(n1, n2) or
                         self.inconsistent_effects_mutex(n1, n2) or
@@ -404,7 +409,7 @@ class PlanningGraph():
         # The second action adds something and the first one removes it.
         incon.extend([effect in node_a1.action.effect_rem for effect in node_a2.action.effect_add])
         # If any of these are true, then the nodes are mutex.
-        return len(incon) == 0 or any(incon)
+        return any(incon)
 
     def interference_mutex(self, node_a1: PgNode_a, node_a2: PgNode_a) -> bool:
         '''
@@ -457,7 +462,7 @@ class PlanningGraph():
             mutex set in each PgNode_a in the set is appropriately updated
         '''
         nodelist = list(nodeset)
-        for i, n1 in enumerate(nodelist[:-1]):
+        for i, n1 in enumerate(nodelist):
             for n2 in nodelist[i + 1:]:
                 if self.negation_mutex(n1, n2) or self.inconsistent_support_mutex(n1, n2):
                     mutexify(n1, n2)
@@ -495,7 +500,7 @@ class PlanningGraph():
         :return: bool
         '''
         icon_support = [a1.is_mutex(a2) for a1 in node_s1.parents for a2 in node_s2.parents]
-        return len(icon_support) != 0 and all(icon_support)
+        return all(icon_support)
 
     def h_levelsum(self) -> int:
         '''The sum of the level costs of the individual goals (admissible if goals independent)
@@ -530,3 +535,14 @@ class PlanningGraph():
                     max_level = i
                     goals_found.add(goal)
         return max_level
+
+    def h_setlevel(self) -> int:
+        '''The max of the level costs of the individual goals
+
+        :return: int
+        '''
+        for i, level in enumerate(self.s_levels):
+            goals = [s for s in level if s.symbol in self.problem.goal and s.is_pos]
+            if len(goals) >= len(self.problem.goal) and all([not s1.is_mutex(s2) for s1 in goals for s2 in goals]):
+                return i
+        return maxsize

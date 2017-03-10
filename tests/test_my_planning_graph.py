@@ -13,6 +13,7 @@ from my_planning_graph import (
 
 
 class TestPlanningGraphLevels(unittest.TestCase):
+
     def setUp(self):
         self.p = have_cake()
         self.pg = PlanningGraph(self.p, self.p.initial)
@@ -34,6 +35,7 @@ class TestPlanningGraphLevels(unittest.TestCase):
 
 
 class TestPlanningGraphMutex(unittest.TestCase):
+
     def setUp(self):
         self.p = have_cake()
         self.pg = PlanningGraph(self.p, self.p.initial)
@@ -62,7 +64,8 @@ class TestPlanningGraphMutex(unittest.TestCase):
     def test_serialize_mutex(self):
         self.assertTrue(PlanningGraph.serialize_actions(self.pg, self.na1, self.na2),
                         "Two persistence action nodes not marked as mutex")
-        self.assertFalse(PlanningGraph.serialize_actions(self.pg, self.na3, self.na4), "Two No-Ops were marked mutex")
+        self.assertFalse(PlanningGraph.serialize_actions(
+            self.pg, self.na3, self.na4), "Two No-Ops were marked mutex")
         self.assertFalse(PlanningGraph.serialize_actions(self.pg, self.na1, self.na3),
                          "No-op and persistence action incorrectly marked as mutex")
 
@@ -116,12 +119,16 @@ class TestPlanningGraphMutex(unittest.TestCase):
 
 
 class TestPlanningGraphHeuristics(unittest.TestCase):
+
     def setUp(self):
         self.p = have_cake()
         self.pg = PlanningGraph(self.p, self.p.initial)
 
     def test_levelsum(self):
         self.assertEqual(self.pg.h_levelsum(), 1)
+
+    def test_setlevel(self):
+        self.assertEqual(self.pg.h_setlevel(), 2)
 
 
 if __name__ == '__main__':
