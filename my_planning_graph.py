@@ -547,6 +547,6 @@ class PlanningGraph():
             if len(goals) == len(self.problem.goal) and all([not s1.is_mutex(s2) for s1 in goals for s2 in goals]):
                 # If we have the correct number of goals and none of them are pairwise mutex.
                 return i
-        # If we can't find such a level, then we return the number of s levels + 1.
+        # If we can't find such a level, then we return the number of s levels.
         # I tried this with float("inf"), but that doesn't work for Problem 2 or 3.
-        return len(self.s_levels) + 1
+        return len(self.s_levels)
