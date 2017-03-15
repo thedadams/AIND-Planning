@@ -18,7 +18,7 @@
 \newcommand{\GRAPHPLAN}{\texttt{GRAPHPLAN}}
 \newcommand{\STRIPS}{\texttt{STRIPS}}
 
-\pagestyle{fancy}\lhead{\textit{Game Tree Searching by Min/Max Approximation} by Ronald L. Rivest} \rhead{}
+\pagestyle{fancy}\lhead{Planning Graph Search} \rhead{Donald Adams}
 \chead{} \lfoot{} \rfoot{} \cfoot{}
 
 \begin{document}
@@ -26,8 +26,18 @@ Artificial intelligence planning has had many applications over the years. The t
 
 The first big advancement in this area was the \STRIPS{} algorithm. \STRIPS{} was developed as planning algorithm for a mobile robot that could navigate and push objects around in a multi-room environment\cite{StripsRevisit}. Although this was just one part of the ``Skakey the robot'' project, it established the foundation of classical planning terminology. For example, all the propositional logic we used in the project was originally used in the \STRIPS{} algorithm\cite{Weld1999}. However, this algorithm had limitations: it assumed that actions could be applied one at any time, that nothing changed except as a result of the actions, and that actions were instantaneous\cite{StripsRevisit}. Of course these assumptions are not a realistic model of the world we occupy and it was shown that \STRIPS{} could not solve some relatively simple problems\cite{AMIA}. This led to some other advancement that eventually lead us to \GRAPHPLAN{}.
 
+\GRAPHPLAN{} is celebrated because it is a simple algorithm and is orders of magnitude faster than its predecessors\cite{Weld1999}. This is essentially the algorithm covered in the lecture videos, however we did not cover very much (if any) of the ``solution-extraction phase.'' To the best that I can tell, we didn't code any of that phase in the project either. We did implement several parts of the ``graph-expansion phase.'' One of the main reasons that \GRAPHPLAN{} is so efficient is the mutual-exclusion (or mutex) relations. Part of our project was to code the various ways that action and literal nodes could be mutex. The goal with graph expansion is to get to the point that all goal literals appear at a level, all being pairwise not mutex. Then the next step follows.
 
+The solution-extraction phase of \GRAPHPLAN{} is a follows. First, at level i, we try to find a non-mutex set of actions that achieves all the desired goals using a depth-first search. If we find a set of non-mutex actions that give us all the goals at level i, then we do the same thing at level i-1 with our ``goals'' now being the preconditions of the set of actions we found. When \GRAPHPLAN{} gets to level 0, then we only check to see if the preconditions we have are in the initial state. If at any level we are unable to find a set of non-mutex actions, then we continue expanding the graph (from \cite{AMIA} and \cite{Weld1999})
 
-\bibliography{biblio}{}
+Now there many optimizations we can make to \GRAPHPLAN{}. First, we note that graph expansion is at worst polynomial time, while solution-extraction is exponential\cite{BlumFurst}. However, the majority of the computation time is taken up in graph expansion, therefore any optimizations made to graph expansion are valuable\cite{Weld1999}.
+
+One such optimization was done in the project: the closed-world assumption. This the idea that any proposition not explicitly given as true in the initial state can be assumed to be negative. Another optimization which we have encountered in this Nanodegree Program is constraint satisfaction. It is straightforward to see the connection between constraint satisfaction problems and the solution-extraction phase of \GRAPHPLAN{}\cite{Weld1999}.
+
+The last optimization that I will mention here is in-place graph expansion. In \cite{Weld1999}, we see that literal and action levels are monotonically increasing, while mutexes at each level are monotonically decreasing. Using this information, we can get rid of the multilevel graph expansion approach in \GRAPHPLAN{} and simply two a bipartite with action nodes on one side and literal nodes on the other. An arc from a literal node to an action node indicates a precondition and an arc from an action node to a literal node indicates an effect. We can then use markers to keep track of mutex conditions that we update as we consider more and more actions. This would speed up our algorithm because we would have few nodes and only need to create them once.
+
+It is easy to see how these technologies build on each other: \STRIPS{} spawned ideas like \GRAPHPLAN{}, and \GRAPHPLAN{}, with some of the optimizations mention here, spawned new techniques like \texttt{IPP}\cite{Koehler} and \texttt{SGP}\cite{AndersonSmith}. Hopefully a participant in this program will make the next big move in planning graph search.
+
+\bibliography{biblio}
 \bibliographystyle{plain}
 \end{document}
